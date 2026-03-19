@@ -122,8 +122,23 @@ class ApiService {
         messages.add({"role": msg.sender == 'user' ? "user" : "assistant", "content": msg.text});
       }
       messages.add({"role": "user", "content": message});
-      final res = await http.post(Uri.parse(url), headers: {"Content-Type": "application/json", "Authorization": "Bearer $apiKey"}, body: jsonEncode({"model": model, "messages": messages}));
+      
+      final res = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $apiKey",
+          "HTTP-Referer": "https://github.com/Abuzar7024/smart_assistant",
+          "X-Title": "Smart Assistant",
+        },
+        body: jsonEncode({"model": model, "messages": messages}),
+      );
+
       if (res.statusCode == 200) return jsonDecode(res.body)['choices'][0]['message']['content'];
+      
+      if (res.statusCode == 401) return "$provider Error: 401. Invalid API Key.";
+      if (res.statusCode == 403) return "$provider Error: 403. Check your key permissions.";
+      
       return "$provider Error: ${res.statusCode}. Quota reached.";
     } catch (e) { return "$provider Request Error: $e"; }
   }
