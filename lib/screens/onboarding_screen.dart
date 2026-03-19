@@ -74,7 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.auto_awesome, size: 60, color: theme.colorScheme.primary),
-                  ).animate().scale(duration: 600.ms, curve: Curves.backOut),
+                  ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
                   const SizedBox(height: 30),
                   Text(
                     'Welcome to Smart Assistant',
