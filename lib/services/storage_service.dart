@@ -1,8 +1,9 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/message.dart';
+import '../models/conversation.dart';
 
 class StorageService {
-  static const String _chatBoxName = 'chat_messages';
+  static const String _conversationsBoxName = 'conversations';
   static const String _settingsBoxName = 'settings';
   static const String _apiKeyKey = 'gemini_api_key';
   static const String _userNameKey = 'user_name';
@@ -12,11 +13,12 @@ class StorageService {
   Future<void> init() async {
     await Hive.initFlutter();
     Hive.registerAdapter(MessageAdapter());
-    await Hive.openBox<Message>(_chatBoxName);
+    Hive.registerAdapter(ConversationAdapter());
+    await Hive.openBox<Conversation>(_conversationsBoxName);
     await Hive.openBox(_settingsBoxName);
   }
 
-  Box<Message> get _chatBox => Hive.box<Message>(_chatBoxName);
+  Box<Conversation> get _conversationsBox => Hive.box<Conversation>(_conversationsBoxName);
   Box get _settingsBox => Hive.box(_settingsBoxName);
 
   // API Key Storage
@@ -26,10 +28,6 @@ class StorageService {
 
   String? getApiKey() {
     return _settingsBox.get(_apiKeyKey) as String?;
-  }
-
-  Future<void> clearApiKey() async {
-    await _settingsBox.delete(_apiKeyKey);
   }
 
   // User Preferences
@@ -57,16 +55,26 @@ class StorageService {
     return _settingsBox.get(_reactionStyleKey) as String? ?? 'Expressive';
   }
 
-  // Chat History
-  Future<void> saveMessage(Message message) async {
-    await _chatBox.add(message);
+  // Conversation Sessions
+  Future<void> saveConversation(Conversation conversation) async {
+    await _conversationsBox.put(conversation.id, conversation);
   }
 
-  List<Message> getMessages() {
-    return _chatBox.values.toList();
+  List<Conversation> getConversations() {
+    final list = _conversationsBox.values.toList();
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
   }
 
-  Future<void> clearHistory() async {
-    await _chatBox.clear();
+  Conversation? getConversation(String id) {
+    return _conversationsBox.get(id);
+  }
+
+  Future<void> deleteConversation(String id) async {
+    await _conversationsBox.delete(id);
+  }
+
+  Future<void> clearAllConversations() async {
+    await _conversationsBox.clear();
   }
 }

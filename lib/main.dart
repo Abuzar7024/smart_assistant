@@ -70,6 +70,10 @@ class _SmartAssistantAppState extends State<SmartAssistantApp> {
           builder: (context, state) => const ChatScreen(),
         ),
         GoRoute(
+          path: '/chat/:id',
+          builder: (context, state) => ChatScreen(conversationId: state.pathParameters['id']),
+        ),
+        GoRoute(
           path: '/history',
           builder: (context, state) => const HistoryScreen(),
         ),

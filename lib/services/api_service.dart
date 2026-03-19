@@ -96,19 +96,30 @@ class ApiService {
 
   // POST /chat -> Now uses Gemini with personalization!
   Future<String> sendChatMessage(String message, {String? systemInstruction}) async {
-    if (_model == null) {
-      return "Error: Gemini API Key is not set. Please configure it in settings.";
-    }
     try {
       final content = [
         if (systemInstruction != null) Content.text(systemInstruction),
         Content.text(message),
       ];
-      final response = await _model!.generateContent(content);
+      final response = await _model.generateContent(content);
       
       return response.text ?? "I'm sorry, I couldn't generate a response.";
     } catch (e) {
       return "Error: $e";
+    }
+  }
+
+  // Generate a short title based on the first few messages
+  Future<String> generateConversationTitle(List<Message> context) async {
+    try {
+      final chatContext = context.take(3).map((m) => "${m.sender}: ${m.text}").join("\n");
+      final prompt = "Summarize this conversation into a short, creative 3-5 word title. "
+          "Return ONLY the title text, no quotes or additional formatting:\n\n$chatContext";
+          
+      final response = await _model.generateContent([Content.text(prompt)]);
+      return response.text?.trim() ?? "New Conversation";
+    } catch (e) {
+      return "New Conversation";
     }
   }
 

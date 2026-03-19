@@ -1,12 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../providers/chat_provider.dart';
-import '../models/message.dart';
-import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import '../models/conversation.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String? conversationId;
+  const ChatScreen({super.key, this.conversationId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -15,6 +12,14 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ChatProvider>().setActiveConversation(widget.conversationId);
+    });
+  }
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
@@ -31,6 +36,16 @@ class _ChatScreenState extends State<ChatScreen> {
     final chatProvider = Provider.of<ChatProvider>(context);
     final theme = Theme.of(context);
 
+    // Get current conversation title
+    String appBarTitle = 'Smart Assistant';
+    if (chatProvider.activeConversationId != null) {
+      final conv = chatProvider.conversations.firstWhere(
+        (c) => c.id == chatProvider.activeConversationId,
+        orElse: () => Conversation(id: '', title: 'Smart Assistant', createdAt: DateTime.now(), messages: []),
+      );
+      appBarTitle = conv.title;
+    }
+
     // Scroll to bottom whenever messages list changes
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
@@ -38,15 +53,15 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Column(
           children: [
-            const Text('Smart Assistant', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(appBarTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             if (chatProvider.isTyping)
               Text('typing...', style: TextStyle(fontSize: 12, color: theme.colorScheme.primary)),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.cleaning_services_outlined),
-            onPressed: () => _showClearDialog(context, chatProvider),
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _showDeleteDialog(context, chatProvider),
           ),
         ],
       ),
@@ -85,15 +100,18 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _showClearDialog(BuildContext context, ChatProvider provider) {
+  void _showDeleteDialog(BuildContext context, ChatProvider provider) {
+    final conversationId = provider.activeConversationId;
+    if (conversationId == null) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Clear History?', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('All messages will be permanently removed from this session.'),
+        title: const Text('Delete Conversation?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('This will permanently delete this entire chat session.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep Messages')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade50,
@@ -102,10 +120,11 @@ class _ChatScreenState extends State<ChatScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              provider.clearHistory();
-              Navigator.pop(context);
+              provider.deleteConversation(conversationId);
+              Navigator.pop(context); // Close dialog
+              context.pop(); // Go back to Home
             },
-            child: const Text('Clear All'),
+            child: const Text('Delete'),
           ),
         ],
       ),

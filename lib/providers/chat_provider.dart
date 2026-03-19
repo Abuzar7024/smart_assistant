@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../models/message.dart';
+import '../models/conversation.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
@@ -11,11 +13,23 @@ class ChatProvider with ChangeNotifier {
     _loadHistory();
   }
 
-  List<Message> _messages = [];
+  List<Conversation> _conversations = [];
+  String? _activeConversationId;
   bool _isTyping = false;
 
-  List<Message> get messages => _messages;
+  List<Conversation> get conversations => _conversations;
+  String? get activeConversationId => _activeConversationId;
   bool get isTyping => _isTyping;
+
+  List<Message> get messages {
+    if (_activeConversationId == null) return [];
+    try {
+      return _conversations.firstWhere((c) => c.id == _activeConversationId).messages;
+    } catch (_) {
+      return [];
+    }
+  }
+
   bool get hasApiKey => true;
   bool get hasUserName => _storageService.getUserName() != null;
   String get userName => _storageService.getUserName() ?? 'Friend';
@@ -23,7 +37,17 @@ class ChatProvider with ChangeNotifier {
   String get reactionStyle => _storageService.getReactionStyle();
 
   void _loadHistory() {
-    _messages = _storageService.getMessages();
+    _conversations = _storageService.getConversations();
+    notifyListeners();
+  }
+
+  void setActiveConversation(String? id) {
+    _activeConversationId = id;
+    notifyListeners();
+  }
+
+  Future<void> startNewChat() async {
+    _activeConversationId = null;
     notifyListeners();
   }
 
@@ -44,14 +68,30 @@ class ChatProvider with ChangeNotifier {
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
+    // Create a new conversation if none is active
+    if (_activeConversationId == null) {
+      final newId = const Uuid().v4();
+      final newConversation = Conversation(
+        id: newId,
+        title: 'New Chat',
+        createdAt: DateTime.now(),
+        messages: [],
+      );
+      _conversations.insert(0, newConversation);
+      _activeConversationId = newId;
+      await _storageService.saveConversation(newConversation);
+    }
+
+    final conversation = _conversations.firstWhere((c) => c.id == _activeConversationId);
+    
     final userMessage = Message(
       sender: 'user',
       text: text,
       timestamp: DateTime.now(),
     );
 
-    _messages.add(userMessage);
-    await _storageService.saveMessage(userMessage);
+    conversation.messages.add(userMessage);
+    await _storageService.saveConversation(conversation);
     _isTyping = true;
     notifyListeners();
 
@@ -64,15 +104,23 @@ class ChatProvider with ChangeNotifier {
         timestamp: DateTime.now(),
       );
 
-      _messages.add(assistantMessage);
-      await _storageService.saveMessage(assistantMessage);
+      conversation.messages.add(assistantMessage);
+      await _storageService.saveConversation(conversation);
+      
+      // Auto-titling: Generate title if it's a new chat and we have at least one back-and-forth
+      if (conversation.title == 'New Chat' && conversation.messages.length >= 2) {
+        final newTitle = await _apiService.generateConversationTitle(conversation.messages);
+        conversation.title = newTitle;
+        await _storageService.saveConversation(conversation);
+      }
+      
     } catch (e) {
       final errorMessage = Message(
         sender: 'assistant',
         text: "Sorry, I'm having trouble connecting. Please try again later.",
         timestamp: DateTime.now(),
       );
-      _messages.add(errorMessage);
+      conversation.messages.add(errorMessage);
     } finally {
       _isTyping = false;
       notifyListeners();
@@ -86,9 +134,19 @@ class ChatProvider with ChangeNotifier {
            "Use a $reactionStyle reaction style.";
   }
 
+  Future<void> deleteConversation(String id) async {
+    await _storageService.deleteConversation(id);
+    _conversations.removeWhere((c) => c.id == id);
+    if (_activeConversationId == id) {
+      _activeConversationId = null;
+    }
+    notifyListeners();
+  }
+
   Future<void> clearHistory() async {
-    await _storageService.clearHistory();
-    _messages = [];
+    await _storageService.clearAllConversations();
+    _conversations = [];
+    _activeConversationId = null;
     notifyListeners();
   }
 }

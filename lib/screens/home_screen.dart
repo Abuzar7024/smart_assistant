@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final chatProvider = Provider.of<ChatProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
-    final messages = chatProvider.messages.reversed.toList();
+    final conversations = chatProvider.conversations;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -36,10 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
-          ),
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () => context.push('/history'),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -75,21 +71,29 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w300),
                       ),
                       Text(
-                        "Your Recent Chats",
+                        "My Conversations",
                         style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                       ),
                     ],
                   ).animate().fadeIn(duration: 600.ms).moveY(begin: 20, end: 0),
                 ),
                 Expanded(
-                  child: messages.isEmpty
+                  child: conversations.isEmpty
                       ? _buildEmptyState(theme)
                       : ListView.builder(
-                          itemCount: messages.length > 10 ? 10 : messages.length,
+                          itemCount: conversations.length,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemBuilder: (context, index) {
-                            final message = messages[index];
-                            return _RecentChatCard(message: message, index: index);
+                            final conversation = conversations[index];
+                            return _ConversationGroupCard(
+                              conversation: conversation, 
+                              index: index,
+                              onTap: () {
+                                chatProvider.setActiveConversation(conversation.id);
+                                context.push('/chat/${conversation.id}');
+                              },
+                              onDelete: () => chatProvider.deleteConversation(conversation.id),
+                            );
                           },
                         ),
                 ),
@@ -99,14 +103,18 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/chat'),
+        onPressed: () {
+          chatProvider.startNewChat();
+          context.push('/chat');
+        },
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
-        label: const Text('Start Chat', style: TextStyle(fontWeight: FontWeight.bold)),
-        icon: const Icon(Icons.auto_awesome),
+        label: const Text('New Chat', style: TextStyle(fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add),
       ).animate().scale(delay: 400.ms),
     );
   }
+
   Widget _buildEmptyState(ThemeData theme) {
     return Center(
       child: Column(
@@ -115,13 +123,16 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(Icons.chat_bubble_outline, size: 80, color: theme.colorScheme.primary.withAlpha(50)),
           const SizedBox(height: 20),
           Text(
-            "No recent chats yet",
+            "No conversations yet",
             style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface.withAlpha(150)),
           ),
           const SizedBox(height: 10),
           ElevatedButton(
-            onPressed: () => context.push('/chat'),
-            child: const Text('Start an AI Conversation'),
+            onPressed: () {
+              context.read<ChatProvider>().startNewChat();
+              context.push('/chat');
+            },
+            child: const Text('Start your first AI Chat'),
           ),
         ],
       ),
@@ -129,21 +140,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _RecentChatCard extends StatelessWidget {
-  final dynamic message;
+class _ConversationGroupCard extends StatelessWidget {
+  final dynamic conversation;
   final int index;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
 
-  const _RecentChatCard({required this.message, required this.index});
+  const _ConversationGroupCard({
+    required this.conversation, 
+    required this.index, 
+    required this.onTap,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isUser = message.sender == 'user';
+    final lastMessage = conversation.messages.isNotEmpty 
+        ? conversation.messages.last.text 
+        : 'Empty conversation';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => context.push('/chat'),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -157,14 +177,10 @@ class _RecentChatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (isUser ? theme.colorScheme.primary : theme.colorScheme.secondary).withAlpha(20),
+                  color: theme.colorScheme.primary.withAlpha(20),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  isUser ? Icons.person_outline : Icons.auto_awesome,
-                  size: 20,
-                  color: isUser ? theme.colorScheme.primary : theme.colorScheme.secondary,
-                ),
+                child: Icon(Icons.chat_bubble_outline, size: 20, color: theme.colorScheme.primary),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -172,18 +188,25 @@ class _RecentChatCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      message.text,
+                      conversation.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isUser ? 'You' : 'Assistant',
+                      lastMessage,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withAlpha(150)),
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20),
+                onPressed: onDelete,
+                color: Colors.red.withAlpha(100),
               ),
               Icon(Icons.chevron_right, size: 16, color: theme.colorScheme.onSurface.withAlpha(80)),
             ],
