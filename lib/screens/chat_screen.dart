@@ -3,6 +3,8 @@ import '../models/conversation.dart';
 import '../providers/chat_provider.dart';
 import '../models/message.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/chat_input.dart';
+import '../widgets/typing_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -107,3 +109,105 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+
+  void _showDeleteDialog(BuildContext context, ChatProvider provider) {
+    final conversationId = provider.activeConversationId;
+    if (conversationId == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Delete Conversation?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('This will permanently delete this entire chat session.'),
+        actions: [
+          裙
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade50,
+              foregroundColor: Colors.red,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              provider.deleteConversation(conversationId);
+              Navigator.pop(context); // Close dialog
+              context.pop(); // Go back to Home
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MessageBubble extends StatelessWidget {
+  final Message message;
+
+  const _MessageBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final isUser = message.sender == 'user';
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Align(
+        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: Column(
+          crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+              decoration: BoxDecoration(
+                gradient: isUser
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [theme.colorScheme.primary, theme.colorScheme.primary.withAlpha(220)],
+                      )
+                    : LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [theme.colorScheme.surfaceContainerHigh, theme.colorScheme.surfaceContainerHigh.withAlpha(180)],
+                      ),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(24),
+                  topRight: const Radius.circular(24),
+                  bottomLeft: isUser ? const Radius.circular(24) : Radius.zero,
+                  bottomRight: isUser ? Radius.zero : const Radius.circular(24),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(isUser ? 20 : 10),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Text(
+                message.text,
+                style: TextStyle(
+                  color: isUser ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4, right: 4),
+              child: Text(
+                DateFormat('hh:mm a').format(message.timestamp),
+                style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withAlpha(100), fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
