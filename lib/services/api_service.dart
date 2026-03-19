@@ -5,6 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/suggestion.dart';
 import '../models/message.dart';
 import '../core/secrets.dart';
+import '../core/constants.dart';
 
 enum AiProvider { gemini, mistral, groq, openRouter }
 
@@ -31,7 +32,7 @@ class ApiService {
 
   void _initGemini() {
     _geminiModel = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: AppConstants.geminiModel,
       apiKey: AppSecrets.geminiApiKey,
       systemInstruction: Content.system(
         "You are a helpful, professional AI. Be natural, conversational, and warm."
