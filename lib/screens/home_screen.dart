@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     final conversations = chatProvider.conversations;
+    final grouped = _groupConversations(conversations);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -71,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w300),
                       ),
                       Text(
-                        "My Conversations",
+                        "My History",
                         style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                       ),
                     ],
@@ -81,18 +82,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: conversations.isEmpty
                       ? _buildEmptyState(theme)
                       : ListView.builder(
-                          itemCount: conversations.length,
+                          itemCount: grouped.keys.length,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemBuilder: (context, index) {
-                            final conversation = conversations[index];
-                            return _ConversationGroupCard(
-                              conversation: conversation, 
-                              index: index,
-                              onTap: () {
-                                chatProvider.setActiveConversation(conversation.id);
-                                context.push('/chat/${conversation.id}');
-                              },
-                              onDelete: () => chatProvider.deleteConversation(conversation.id),
+                          itemBuilder: (context, sectionIndex) {
+                            final groupTitle = grouped.keys.elementAt(sectionIndex);
+                            final groupItems = grouped[groupTitle]!;
+                            
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  child: Text(
+                                    groupTitle,
+                                    style: theme.textTheme.labelMedium?.copyWith(
+                                      color: theme.colorScheme.primary.withAlpha(180),
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                ...groupItems.asMap().entries.map((entry) {
+                                  final convIndex = entry.key;
+                                  final conversation = entry.value;
+                                  return _ConversationGroupCard(
+                                    conversation: conversation,
+                                    index: convIndex,
+                                    onTap: () {
+                                      chatProvider.setActiveConversation(conversation.id);
+                                      context.push('/chat/${conversation.id}');
+                                    },
+                                    onDelete: () => chatProvider.deleteConversation(conversation.id),
+                                  );
+                                }).toList(),
+                              ],
                             );
                           },
                         ),
@@ -113,6 +136,34 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: const Icon(Icons.add),
       ).animate().scale(delay: 400.ms),
     );
+  }
+
+  Map<String, List<dynamic>> _groupConversations(List<dynamic> conversations) {
+    final Map<String, List<dynamic>> groups = {};
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final lastWeek = today.subtract(const Duration(days: 7));
+
+    for (var conv in conversations) {
+      final date = DateTime(conv.createdAt.year, conv.createdAt.month, conv.createdAt.day);
+      String group;
+      if (date == today) {
+        group = "Today";
+      } else if (date == yesterday) {
+        group = "Yesterday";
+      } else if (date.isAfter(lastWeek)) {
+        group = "Previous 7 Days";
+      } else {
+        group = "${date.month}/${date.year}"; // Or month name
+      }
+
+      if (!groups.containsKey(group)) {
+        groups[group] = [];
+      }
+      groups[group]!.add(conv);
+    }
+    return groups;
   }
 
   Widget _buildEmptyState(ThemeData theme) {
