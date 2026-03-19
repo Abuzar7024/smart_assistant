@@ -58,23 +58,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? 'Gemini (Google)' 
                 : chatProvider.currentProvider == AiProvider.groq
                     ? 'Groq (Ultra-Fast)'
-                    : 'Mistral (Backup)',
-            items: ['Gemini (Google)', 'Mistral (Backup)', 'Groq (Ultra-Fast)'],
+                    : chatProvider.currentProvider == AiProvider.openRouter
+                        ? 'OpenRouter (Unlimited)'
+                        : 'Mistral (Backup)',
+            items: ['Gemini (Google)', 'Mistral (Backup)', 'Groq (Ultra-Fast)', 'OpenRouter (Unlimited)'],
             onChanged: (value) {
               if (value == 'Gemini (Google)') {
                 chatProvider.setProvider(AiProvider.gemini);
               } else if (value == 'Groq (Ultra-Fast)') {
                 chatProvider.setProvider(AiProvider.groq);
+              } else if (value == 'OpenRouter (Unlimited)') {
+                chatProvider.setProvider(AiProvider.openRouter);
               } else {
                 chatProvider.setProvider(AiProvider.mistral);
               }
             },
           ),
-          if (chatProvider.currentProvider == AiProvider.groq)
+          if (chatProvider.currentProvider == AiProvider.openRouter)
             Padding(
               padding: const EdgeInsets.only(top: 10, left: 8),
               child: Text(
-                "Tip: Groq provides world-class speed for Meta's Llama 3 models.",
+                "Tip: OpenRouter gives you access to GPT-4o, Claude 3.5, and 100+ others.",
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
               ),
             ),

@@ -14,7 +14,9 @@ class ChatProvider with ChangeNotifier {
         ? AiProvider.gemini 
         : _storageService.getAiProvider() == 'groq' 
             ? AiProvider.groq 
-            : AiProvider.mistral,
+            : _storageService.getAiProvider() == 'openRouter'
+                ? AiProvider.openRouter
+                : AiProvider.mistral,
   ) {
     _loadHistory();
   }
@@ -54,6 +56,7 @@ class ChatProvider with ChangeNotifier {
     String providerStr = 'mistral';
     if (provider == AiProvider.gemini) providerStr = 'gemini';
     if (provider == AiProvider.groq) providerStr = 'groq';
+    if (provider == AiProvider.openRouter) providerStr = 'openRouter';
     _storageService.saveAiProvider(providerStr);
     notifyListeners();
   }

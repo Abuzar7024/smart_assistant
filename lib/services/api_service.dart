@@ -6,11 +6,11 @@ import '../models/suggestion.dart';
 import '../models/message.dart';
 import '../core/secrets.dart';
 
-enum AiProvider { gemini, mistral, groq }
+enum AiProvider { gemini, mistral, groq, openRouter }
 
 class ApiService {
   late GenerativeModel _geminiModel;
-  AiProvider _currentProvider = AiProvider.mistral; // Default to Mistral as per user request
+  AiProvider _currentProvider = AiProvider.mistral;
   
   // Mistral Config
   final String _mistralUrl = "https://api.mistral.ai/v1/chat/completions";
@@ -19,6 +19,10 @@ class ApiService {
   // Groq Config
   final String _groqUrl = "https://api.groq.com/openai/v1/chat/completions";
   final String _groqModel = "llama3-8b-8192";
+
+  // OpenRouter Config
+  final String _openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
+  final String _openRouterModel = "meta-llama/llama-3.1-8b-instruct:free";
 
   ApiService({AiProvider? initialProvider}) {
     _currentProvider = initialProvider ?? AiProvider.mistral;
@@ -30,8 +34,7 @@ class ApiService {
       model: 'gemini-1.5-flash',
       apiKey: AppSecrets.geminiApiKey,
       systemInstruction: Content.system(
-        "You are a helpful, professional, yet very natural and friendly AI assistant. "
-        "Speak like a supportive human. Keep responses concise and warm."
+        "You are a helpful, professional AI. Be natural, conversational, and warm."
       ),
     );
   }
@@ -50,103 +53,62 @@ class ApiService {
         return _sendMistralMessage(message, history: history, systemInstruction: systemInstruction);
       case AiProvider.groq:
         return _sendGroqMessage(message, history: history, systemInstruction: systemInstruction);
+      case AiProvider.openRouter:
+        return _sendOpenRouterMessage(message, history: history, systemInstruction: systemInstruction);
     }
   }
 
   Future<String> _sendGeminiMessage(String message, {List<Message> history = const [], String? systemInstruction}) async {
     try {
-      final chatHistory = history.map((m) {
-        return m.sender == 'user' ? Content.text(m.text) : Content.model([TextPart(m.text)]);
-      }).toList();
+      final chatHistory = history.map((m) => m.sender == 'user' ? Content.text(m.text) : Content.model([TextPart(m.text)])).toList();
       final chat = _geminiModel.startChat(history: chatHistory);
-      final content = systemInstruction != null 
-          ? Content.multi([TextPart(systemInstruction), TextPart(message)])
-          : Content.text(message);
-      final response = await chat.sendMessage(content);
+      final response = await chat.sendMessage(Content.text(message));
       return response.text ?? "No response from Gemini.";
     } catch (e) {
-      return "Gemini Error: Quota reached. Please try Mistral or Groq in Settings.";
+      return "Gemini Error: Quota reached. Switch to Mistral, Groq, or OpenRouter in Settings.";
     }
   }
 
   Future<String> _sendMistralMessage(String message, {List<Message> history = const [], String? systemInstruction}) async {
-    return _sendOpenAiCompatible(
-      url: _mistralUrl,
-      model: _mistralModel,
-      apiKey: AppSecrets.mistralApiKey,
-      message: message,
-      history: history,
-      systemInstruction: systemInstruction,
-      providerName: "Mistral",
-    );
+    return _sendOpenAiCompatible(_mistralUrl, _mistralModel, AppSecrets.mistralApiKey, message, history, systemInstruction, "Mistral");
   }
 
   Future<String> _sendGroqMessage(String message, {List<Message> history = const [], String? systemInstruction}) async {
-    return _sendOpenAiCompatible(
-      url: _groqUrl,
-      model: _groqModel,
-      apiKey: AppSecrets.groqApiKey,
-      message: message,
-      history: history,
-      systemInstruction: systemInstruction,
-      providerName: "Groq",
-    );
+    return _sendOpenAiCompatible(_groqUrl, _groqModel, AppSecrets.groqApiKey, message, history, systemInstruction, "Groq");
   }
 
-  Future<String> _sendOpenAiCompatible({
-    required String url,
-    required String model,
-    required String apiKey,
-    required String message,
-    required List<Message> history,
-    required String? systemInstruction,
-    required String providerName,
-  }) async {
-    if (apiKey.isEmpty) return "Please set your $providerName API key in secrets.dart.";
+  Future<String> _sendOpenRouterMessage(String message, {List<Message> history = const [], String? systemInstruction}) async {
+    return _sendOpenAiCompatible(_openRouterUrl, _openRouterModel, AppSecrets.openRouterApiKey, message, history, systemInstruction, "OpenRouter");
+  }
+
+  Future<String> _sendOpenAiCompatible(String url, String model, String apiKey, String message, List<Message> history, String? systemInstruction, String provider) async {
+    if (apiKey.isEmpty) return "Please set your $provider API key in secrets.dart.";
     try {
-      final List<Map<String, String>> messages = [];
-      messages.add({"role": "system", "content": systemInstruction ?? "You are a natural AI assistant."});
+      final messages = [{"role": "system", "content": systemInstruction ?? "You are a natural AI."}];
       for (var msg in history.take(10)) {
         messages.add({"role": msg.sender == 'user' ? "user" : "assistant", "content": msg.text});
       }
       messages.add({"role": "user", "content": message});
-
-      final response = await http.post(
+      final res = await http.post(
         Uri.parse(url),
         headers: {"Content-Type": "application/json", "Authorization": "Bearer $apiKey"},
         body: jsonEncode({"model": model, "messages": messages}),
       );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
-      } else {
-        return "$providerName Error: ${response.statusCode}. Check your key in Settings.";
-      }
-    } catch (e) {
-      return "$providerName Request Error: $e";
-    }
+      if (res.statusCode == 200) return jsonDecode(res.body)['choices'][0]['message']['content'];
+      return "$provider Error: ${res.statusCode}. Check your key.";
+    } catch (e) { return "$provider Request Error: $e"; }
   }
 
   Future<String> generateConversationTitle(List<Message> context) async {
     try {
       final chatContext = context.take(3).map((m) => "${m.sender}: ${m.text}").join("\n");
-      final prompt = "Give this chat a natural, human-like title (3-5 words). Return ONLY the title:\n\n$chatContext";
-      final response = await _geminiModel.generateContent([Content.text(prompt)]);
-      return response.text?.trim() ?? "New Conversation";
-    } catch (e) {
-      return "New Conversation";
-    }
+      final res = await _geminiModel.generateContent([Content.text("Short creative title for this chat:\n\n$chatContext")]);
+      return res.text?.trim() ?? "New Conversation";
+    } catch (_) { return "New Conversation"; }
   }
 
   Future<SuggestionResponse> getSuggestions({int page = 1, int limit = 10}) async {
-    final slice = List.generate(limit, (index) => Suggestion(
-      id: index + 1,
-      title: ["How are you?", "Fun fact", "Trip plan", "Movie", "Note", "Simply", "Code", "Up to?", "Book", "Math"][index % 10],
-      description: "Get a quick starting point for your chat session.",
-    ));
-    return SuggestionResponse(status: "success", data: slice, pagination: Pagination(
-      currentPage: page, totalPages: 5, totalItems: 50, limit: limit, hasNext: true, hasPrevious: false
-    ));
+    final slice = List.generate(limit, (index) => Suggestion(id: index+1, title: "Suggestion ${index+1}", description: "Quick start."));
+    return SuggestionResponse(status: "success", data: slice, pagination: Pagination(currentPage: page, totalPages: 5, totalItems: 50, limit: limit, hasNext: true, hasPrevious: false));
   }
 }
