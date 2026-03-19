@@ -97,7 +97,12 @@ class ChatProvider with ChangeNotifier {
 
     try {
       final systemInstruction = _buildSystemInstruction();
-      final replyText = await _apiService.sendChatMessage(text, systemInstruction: systemInstruction);
+    // Get AI response with context (pass last 10 messages for history)
+    final history = conversation.messages.length > 1 
+        ? conversation.messages.sublist(0, conversation.messages.length - 1)
+        : <Message>[];
+        
+    final replyText = await _apiService.sendChatMessage(text, history: history, systemInstruction: systemInstruction);
       final assistantMessage = Message(
         sender: 'assistant',
         text: replyText,

@@ -10,11 +10,15 @@ class ApiService {
   late final GenerativeModel _model;
 
   ApiService() {
-    // The API key is stored in a gitignored 'secrets.dart' file for security.
-    // See 'secrets.dart.example' for how to set this up for your own local environment.
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       apiKey: AppSecrets.geminiApiKey,
+      systemInstruction: Content.system(
+        "You are a helpful, professional, yet very natural and friendly AI assistant. "
+        "Your goal is to provide generic and high-quality assistance in a conversational manner. "
+        "Avoid overly clinical or robotic phrasing. Speak like a supportive human assistant. "
+        "Keep your responses concise but warm."
+      ),
     );
   }
 
@@ -36,16 +40,16 @@ class ApiService {
 
   static String _getSuggestionTitle(int index) {
     const titles = [
-      "Summarize my notes",
-      "Generate email reply",
-      "Explain Flutter state management",
-      "Recipe for pancakes",
-      "Write a short story",
-      "Translate to Spanish",
-      "Calculate monthly budget",
-      "Analyze stock trends",
-      "Plan a workout",
-      "Debug a Dart exception"
+      "How are you today?",
+      "Tell me a fun fact",
+      "Plan a quick trip",
+      "Suggest a good movie",
+      "Help me write a note",
+      "Explain something simply",
+      "Give me a coding tip",
+      "What are you up to?",
+      "Recommend a book",
+      "Solve a math problem"
     ];
     return titles[index % titles.length];
   }
@@ -94,14 +98,15 @@ class ApiService {
     );
   }
 
-  // POST /chat -> Now uses Gemini with personalization!
-  Future<String> sendChatMessage(String message, {String? systemInstruction}) async {
+  // POST /chat -> Now uses history for context-aware, natural responses
+  Future<String> sendChatMessage(String message, {List<Message> history = const []}) async {
     try {
-      final content = [
-        if (systemInstruction != null) Content.text(systemInstruction),
-        Content.text(message),
-      ];
-      final response = await _model.generateContent(content);
+      final chatHistory = history.map((m) {
+        return m.sender == 'user' ? Content.text(m.text) : Content.model([TextPart(m.text)]);
+      }).toList();
+
+      final chat = _model.startChat(history: chatHistory);
+      final response = await chat.sendMessage(Content.text(message));
       
       return response.text ?? "I'm sorry, I couldn't generate a response.";
     } catch (e) {
@@ -113,8 +118,8 @@ class ApiService {
   Future<String> generateConversationTitle(List<Message> context) async {
     try {
       final chatContext = context.take(3).map((m) => "${m.sender}: ${m.text}").join("\n");
-      final prompt = "Summarize this conversation into a short, creative 3-5 word title. "
-          "Return ONLY the title text, no quotes or additional formatting:\n\n$chatContext";
+      final prompt = "Give this chat a natural, human-like title (3-5 words) that a person would actually give it. "
+          "Avoid robotic summaries like 'Discussion about...'. Just the title text, no quotes:\n\n$chatContext";
           
       final response = await _model.generateContent([Content.text(prompt)]);
       return response.text?.trim() ?? "New Conversation";
