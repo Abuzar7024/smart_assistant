@@ -12,7 +12,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _nameController;
-  late TextEditingController _apiKeyController;
 
   @override
   void initState() {
@@ -119,32 +118,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             }).toList(),
             onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showApiKeyDialog(BuildContext context, ChatProvider provider) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Update API Key'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter your AIzaSy... key',
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              provider.updateApiKey(controller.text.trim());
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
           ),
         ],
       ),

@@ -27,6 +27,9 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // updateApiKey is kept for compatibility but is no-op because the key is hardcoded.
+  Future<void> updateApiKey(String key) async {}
+
   Future<void> updateUserName(String name) async {
     await _storageService.saveUserName(name);
     notifyListeners();
