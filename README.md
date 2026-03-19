@@ -1,57 +1,56 @@
 # Smart Assistant 🤖
 
-A premium, industry-level AI companion built with **Flutter** and powered by **Google Gemini 1.5 Flash**. This project demonstrates clean architecture, advanced state management, and modern UI/UX principles.
+A premium, industry-level AI companion built with **Flutter** and powered by **Google Gemini**.
 
 ---
 
 ## 🌟 Features
 
-- **Gemini 2.5 Flash Integration**: Real-time natural language processing for intelligent assistance.
-- **Premium UI/UX**:
-  - Glassmorphic design elements.
-  - Interactive message bubbles with custom gradients.
-  - Context-aware input handling (disables during processing).
-  - Smooth micro-animations using `flutter_animate`.
-- **Clean Architecture**: Decoupled layers for Services, Providers, and Models.
-- **Dynamic Theming**: Seamless switching between high-contrast Dark and Light modes.
-- **Local Persistence**: Chat history saved locally for a continuous experience.
+- **Gemini 2.5 Flash Integration**: Real-time natural language processing.
+- **Dynamic Onboarding**: Easy in-app API key setup—no coding required!
+- **Premium UI/UX**: Glassmorphic design, custom animations, and clean aesthetics.
+- **Over-the-Air Updates**: Powered by Shorebird for instant improvements.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
-- Flutter SDK (latest stable version)
-- A Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+### 1. Installation
+Clone the repository and install dependencies:
+```bash
+git clone https://github.com/Abuzar7024/smart_assistant.git
+cd smart_assistant
+flutter pub get
+```
 
-### Configuration
-To protect sensitive information, the API key is managed via a local configuration file:
+### 2. Get your Gemini API Key
+Visit [Google AI Studio](https://aistudio.google.com/app/apikey) to get your free API key.
 
-1. Locate `lib/config/gemini_config.dart.example`.
-2. Duplicate it and rename it to `gemini_config.dart`.
-3. Paste your Gemini API key into the `apiKey` field:
-   ```dart
-   class GeminiConfig {
-     static const String apiKey = 'YOUR_API_KEY_HERE';
-   }
-   ```
+### 3. Run the App
+```bash
+flutter run
+```
+On the first run, the app will guide you through entering your API key. That's it!
+
+---
+
+## 🛠️ Advanced: Over-the-Air Updates (Shorebird)
+
+To enable instant hotfixes on Android/iOS, install the Shorebird CLI:
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy ByPass -Command "irm https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1 | iex"
+```
+
+Then initialize it in the project:
+```bash
+shorebird init
+```
 
 ---
 
 ## 👨‍💻 About the Author
 
-This project was developed by **Abuzar**, a passionate Flutter developer focused on building high-performance, AI-driven mobile experiences.
-
-🔗 **Portfolio**: [abuzarcode.in](http://abuzarcode.in)
-🔗 **GitHub**: [@Abuzar7024](https://github.com/Abuzar7024)
-
----
-
-## 🛠️ Tech Stack
-
-- **Framework**: Flutter (Dart)
-- **AI Backend**: Google Generative AI (Gemini)
-- **State Management**: Provider
-- **Animations**: Flutter Animate
-- **Storage**: Hive
-- **Navigation**: Go Router
+**Abuzar** - Flutter Expert & AI Integrator
+🔗 [Portfolio](http://abuzarcode.in) | 🔗 [GitHub](https://github.com/Abuzar7024)

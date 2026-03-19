@@ -3,17 +3,22 @@ import 'dart:math';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/suggestion.dart';
 import '../models/message.dart';
-import '../config/gemini_config.dart';
 
 class ApiService {
-  static const String _apiKey = GeminiConfig.apiKey;
-  
-  final GenerativeModel _model;
+  GenerativeModel? _model;
 
-  ApiService() : _model = GenerativeModel(
-    model: 'gemini-2.5-flash',
-    apiKey: _apiKey,
-  );
+  ApiService([String? apiKey]) {
+    if (apiKey != null) {
+      updateApiKey(apiKey);
+    }
+  }
+
+  void updateApiKey(String apiKey) {
+    _model = GenerativeModel(
+      model: 'gemini-2.5-flash',
+      apiKey: apiKey,
+    );
+  }
 
   // Simulated delay to mimic network latency for suggestions if needed
   static const Duration _delay = Duration(milliseconds: 800);
@@ -90,9 +95,12 @@ class ApiService {
 
   // POST /chat -> Now uses Gemini!
   Future<String> sendChatMessage(String message) async {
+    if (_model == null) {
+      return "Error: Gemini API Key is not set. Please configure it in settings.";
+    }
     try {
       final content = [Content.text(message)];
-      final response = await _model.generateContent(content);
+      final response = await _model!.generateContent(content);
       
       return response.text ?? "I'm sorry, I couldn't generate a response.";
     } catch (e) {

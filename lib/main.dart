@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/history_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'providers/suggestions_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/theme_provider.dart';
@@ -36,22 +37,48 @@ class SmartAssistantApp extends StatefulWidget {
 }
 
 class _SmartAssistantAppState extends State<SmartAssistantApp> {
-  final GoRouter _router = GoRouter(
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/chat',
-        builder: (context, state) => const ChatScreen(),
-      ),
-      GoRoute(
-        path: '/history',
-        builder: (context, state) => const HistoryScreen(),
-      ),
-    ],
-  );
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = GoRouter(
+      initialLocation: '/',
+      redirect: (context, state) {
+        final chatProvider = context.read<ChatProvider>();
+        final bool hasApiKey = chatProvider.hasApiKey;
+        final bool isOnboarding = state.matchedLocation == '/onboarding';
+
+        if (!hasApiKey && !isOnboarding) {
+          return '/onboarding';
+        }
+        
+        if (hasApiKey && isOnboarding) {
+          return '/';
+        }
+
+        return null;
+      },
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/chat',
+          builder: (context, state) => const ChatScreen(),
+        ),
+        GoRoute(
+          path: '/history',
+          builder: (context, state) => const HistoryScreen(),
+        ),
+        GoRoute(
+          path: '/onboarding',
+          builder: (context, state) => const OnboardingScreen(),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

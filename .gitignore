@@ -45,7 +45,6 @@ app.*.map.json
 /android/app/release
 
 # Security / Config
-lib/config/gemini_config.dart
 *.log
 *.txt
 *.iml

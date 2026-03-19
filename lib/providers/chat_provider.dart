@@ -4,10 +4,10 @@ import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
 class ChatProvider with ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService;
   final StorageService _storageService;
 
-  ChatProvider(this._storageService) {
+  ChatProvider(this._storageService) : _apiService = ApiService(_storageService.getApiKey()) {
     _loadHistory();
   }
 
@@ -16,14 +16,32 @@ class ChatProvider with ChangeNotifier {
 
   List<Message> get messages => _messages;
   bool get isTyping => _isTyping;
+  bool get hasApiKey => _storageService.getApiKey() != null;
 
   void _loadHistory() {
     _messages = _storageService.getMessages();
     notifyListeners();
   }
 
+  Future<void> updateApiKey(String key) async {
+    await _storageService.saveApiKey(key);
+    _apiService.updateApiKey(key);
+    notifyListeners();
+  }
+
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+
+    if (!hasApiKey) {
+      final systemMessage = Message(
+        sender: 'assistant',
+        text: "Please set your Gemini API Key in the settings or onboarding screen first.",
+        timestamp: DateTime.now(),
+      );
+      _messages.add(systemMessage);
+      notifyListeners();
+      return;
+    }
 
     final userMessage = Message(
       sender: 'user',
