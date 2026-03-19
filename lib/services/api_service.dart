@@ -16,7 +16,8 @@ class ApiService {
   final String _mistralUrl = "https://api.mistral.ai/v1/chat/completions";
   final String _mistralModel = "open-mistral-7b";
 
-  ApiService() {
+  ApiService({AiProvider? initialProvider}) {
+    _currentProvider = initialProvider ?? AiProvider.mistral;
     _initGemini();
   }
 

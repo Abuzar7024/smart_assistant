@@ -9,7 +9,9 @@ class ChatProvider with ChangeNotifier {
   final ApiService _apiService;
   final StorageService _storageService;
 
-  ChatProvider(this._storageService) : _apiService = ApiService() {
+  ChatProvider(this._storageService) : _apiService = ApiService(
+    initialProvider: _storageService.getAiProvider() == 'gemini' ? AiProvider.gemini : AiProvider.mistral,
+  ) {
     _loadHistory();
   }
 
@@ -45,6 +47,7 @@ class ChatProvider with ChangeNotifier {
 
   void setProvider(AiProvider provider) {
     _apiService.setProvider(provider);
+    _storageService.saveAiProvider(provider == AiProvider.gemini ? 'gemini' : 'mistral');
     notifyListeners();
   }
 

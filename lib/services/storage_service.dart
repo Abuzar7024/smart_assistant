@@ -10,6 +10,7 @@ class StorageService {
   static const String _userAgeKey = 'user_age';
   static const String _chatToneKey = 'chat_tone';
   static const String _reactionStyleKey = 'reaction_style';
+  static const String _aiProviderKey = 'ai_provider';
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -62,6 +63,14 @@ class StorageService {
 
   String getReactionStyle() {
     return _settingsBox.get(_reactionStyleKey) as String? ?? 'Expressive';
+  }
+
+  Future<void> saveAiProvider(String provider) async {
+    await _settingsBox.put(_aiProviderKey, provider);
+  }
+
+  String getAiProvider() {
+    return _settingsBox.get(_aiProviderKey) as String? ?? 'mistral'; // Defaulting to Mistral as requested
   }
 
   // Conversation Sessions
