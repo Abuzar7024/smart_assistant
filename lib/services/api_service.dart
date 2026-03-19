@@ -99,14 +99,20 @@ class ApiService {
   }
 
   // POST /chat -> Now uses history for context-aware, natural responses
-  Future<String> sendChatMessage(String message, {List<Message> history = const []}) async {
+  Future<String> sendChatMessage(String message, {List<Message> history = const [], String? systemInstruction}) async {
     try {
       final chatHistory = history.map((m) {
         return m.sender == 'user' ? Content.text(m.text) : Content.model([TextPart(m.text)]);
       }).toList();
 
+      // Combine model system instruction with dynamic session instruction if both exist
       final chat = _model.startChat(history: chatHistory);
-      final response = await chat.sendMessage(Content.text(message));
+      
+      final content = systemInstruction != null 
+          ? Content.multi([TextPart(systemInstruction), TextPart(message)])
+          : Content.text(message);
+
+      final response = await chat.sendMessage(content);
       
       return response.text ?? "I'm sorry, I couldn't generate a response.";
     } catch (e) {

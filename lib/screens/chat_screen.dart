@@ -121,7 +121,6 @@ class _ChatScreenState extends State<ChatScreen> {
         title: const Text('Delete Conversation?', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('This will permanently delete this entire chat session.'),
         actions: [
-          裙
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
