@@ -54,21 +54,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDropdownTile(
             title: 'Provider',
             icon: Icons.hub_outlined,
-            value: chatProvider.currentProvider == AiProvider.gemini ? 'Gemini (Google)' : 'Mistral (Backup)',
-            items: ['Gemini (Google)', 'Mistral (Backup)'],
+            value: chatProvider.currentProvider == AiProvider.gemini 
+                ? 'Gemini (Google)' 
+                : chatProvider.currentProvider == AiProvider.groq
+                    ? 'Groq (Ultra-Fast)'
+                    : 'Mistral (Backup)',
+            items: ['Gemini (Google)', 'Mistral (Backup)', 'Groq (Ultra-Fast)'],
             onChanged: (value) {
               if (value == 'Gemini (Google)') {
                 chatProvider.setProvider(AiProvider.gemini);
+              } else if (value == 'Groq (Ultra-Fast)') {
+                chatProvider.setProvider(AiProvider.groq);
               } else {
                 chatProvider.setProvider(AiProvider.mistral);
               }
             },
           ),
-          if (chatProvider.currentProvider == AiProvider.mistral)
+          if (chatProvider.currentProvider == AiProvider.groq)
             Padding(
               padding: const EdgeInsets.only(top: 10, left: 8),
               child: Text(
-                "Tip: Mistral is a great free alternative if Gemini reaches its limit.",
+                "Tip: Groq provides world-class speed for Meta's Llama 3 models.",
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
               ),
             ),
