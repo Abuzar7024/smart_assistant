@@ -4,21 +4,20 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/suggestion.dart';
 import '../models/message.dart';
 
+import '../core/constants.dart';
+
 class ApiService {
-  GenerativeModel? _model;
+  late final GenerativeModel _model;
 
-  ApiService([String? apiKey]) {
-    if (apiKey != null) {
-      updateApiKey(apiKey);
-    }
-  }
-
-  void updateApiKey(String apiKey) {
+  ApiService() {
     _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
-      apiKey: apiKey,
+      model: AppConstants.geminiModel,
+      apiKey: AppConstants.geminiApiKey,
     );
   }
+
+  // updateApiKey is no longer needed as the key is hardcoded.
+  void updateApiKey(String apiKey) {}
 
   // Simulated delay to mimic network latency for suggestions if needed
   static const Duration _delay = Duration(milliseconds: 800);

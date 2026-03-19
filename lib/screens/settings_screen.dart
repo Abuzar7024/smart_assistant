@@ -19,18 +19,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final chatProvider = context.read<ChatProvider>();
     _nameController = TextEditingController(text: chatProvider.userName);
-    _apiKeyController = TextEditingController(text: context.read<ChatProvider>().hasApiKey ? '********' : '');
-  }
-
-  Future<void> _launchApiKeyUrl() async {
-    final url = Uri.parse('https://aistudio.google.com/app/apikey');
-    if (!await launchUrl(url)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch URL')),
-        );
-      }
-    }
   }
 
   @override
@@ -79,25 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (value) => chatProvider.updatePreferences(style: value),
           ),
           const SizedBox(height: 30),
-
-          _buildSectionHeader(theme, 'Advanced'),
-          const SizedBox(height: 15),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Gemini API Key'),
-            subtitle: Text(chatProvider.hasApiKey ? 'Key is configured' : 'Not configured'),
-            trailing: TextButton(
-              onPressed: () => _showApiKeyDialog(context, chatProvider),
-              child: const Text('Update'),
-            ),
-          ),
-          const SizedBox(height: 5),
-          TextButton.icon(
-            onPressed: _launchApiKeyUrl,
-            icon: const Icon(Icons.open_in_new, size: 16),
-            label: const Text('Get a new Gemini Key'),
-            style: TextButton.styleFrom(alignment: Alignment.centerLeft, padding: EdgeInsets.zero),
-          ),
           
           const SizedBox(height: 40),
           Center(

@@ -7,7 +7,7 @@ class ChatProvider with ChangeNotifier {
   final ApiService _apiService;
   final StorageService _storageService;
 
-  ChatProvider(this._storageService) : _apiService = ApiService(_storageService.getApiKey()) {
+  ChatProvider(this._storageService) : _apiService = ApiService() {
     _loadHistory();
   }
 
@@ -16,7 +16,7 @@ class ChatProvider with ChangeNotifier {
 
   List<Message> get messages => _messages;
   bool get isTyping => _isTyping;
-  bool get hasApiKey => _storageService.getApiKey() != null;
+  bool get hasApiKey => true;
   bool get hasUserName => _storageService.getUserName() != null;
   String get userName => _storageService.getUserName() ?? 'Friend';
   String get chatTone => _storageService.getChatTone();
@@ -24,12 +24,6 @@ class ChatProvider with ChangeNotifier {
 
   void _loadHistory() {
     _messages = _storageService.getMessages();
-    notifyListeners();
-  }
-
-  Future<void> updateApiKey(String key) async {
-    await _storageService.saveApiKey(key);
-    _apiService.updateApiKey(key);
     notifyListeners();
   }
 

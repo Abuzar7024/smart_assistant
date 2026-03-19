@@ -6,8 +6,8 @@ A premium, industry-level AI companion built with **Flutter** and powered by **G
 
 ## 🌟 Features
 
-- **Gemini 2.5 Flash Integration**: Real-time natural language processing.
-- **Dynamic Onboarding**: Easy in-app API key setup—no coding required!
+- **Zero-Configuration**: Works out of the box—no API key setup required!
+- **Dynamic Onboarding**: Simple name-based setup for a personal touch.
 - **Premium UI/UX**: Glassmorphic design, custom animations, and clean aesthetics.
 - **Over-the-Air Updates**: Powered by Shorebird for instant improvements.
 
@@ -23,14 +23,11 @@ cd smart_assistant
 flutter pub get
 ```
 
-### 2. Get your Gemini API Key
-Visit [Google AI Studio](https://aistudio.google.com/app/apikey) to get your free API key.
-
-### 3. Run the App
+### 2. Run the App
 ```bash
 flutter run
 ```
-On the first run, the app will guide you through entering your API key. That's it!
+On the first run, simply enter your name, and you're ready to chat! The Gemini AI is pre-configured and ready to go.
 
 ---
 
