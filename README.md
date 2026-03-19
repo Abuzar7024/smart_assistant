@@ -23,11 +23,23 @@ cd smart_assistant
 flutter pub get
 ```
 
-### 2. Run the App
+### 2. Configuration
+To keep API keys secure, this project uses a gitignored configuration file:
+
+1. Locate `lib/core/secrets.dart.example`.
+2. Duplicate it and rename the copy to `secrets.dart` (in the same folder).
+3. Open `secrets.dart` and paste your Gemini API key:
+   ```dart
+   class AppSecrets {
+     static const String geminiApiKey = 'YOUR_API_KEY_HERE';
+   }
+   ```
+
+### 3. Run the App
 ```bash
 flutter run
 ```
-On the first run, simply enter your name, and you're ready to chat! The Gemini AI is pre-configured and ready to go.
+On the first run, simply enter your name, and you're ready to chat!
 
 ---
 

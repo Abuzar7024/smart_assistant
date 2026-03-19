@@ -44,10 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Security / Config
+# Securlib/config/gemini_config.dart
+lib/core/secrets.dart
 *.log
 *.txt
 *.iml
 .idea/
 .dart_tool/
-build/

@@ -4,15 +4,17 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/suggestion.dart';
 import '../models/message.dart';
 
-import '../core/constants.dart';
+import '../core/secrets.dart';
 
 class ApiService {
   late final GenerativeModel _model;
 
   ApiService() {
+    // The API key is stored in a gitignored 'secrets.dart' file for security.
+    // See 'secrets.dart.example' for how to set this up for your own local environment.
     _model = GenerativeModel(
-      model: AppConstants.geminiModel,
-      apiKey: AppConstants.geminiApiKey,
+      model: 'gemini-2.5-flash',
+      apiKey: AppSecrets.geminiApiKey,
     );
   }
 
