@@ -42,11 +42,6 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateUserName(String name) {
-    _storageService.saveUserName(name);
-    notifyListeners();
-  }
-
   void setProvider(AiProvider provider) {
     _apiService.setProvider(provider);
     notifyListeners();
