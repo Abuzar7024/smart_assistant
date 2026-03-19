@@ -13,18 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SuggestionsProvider>().fetchSuggestions();
-    });
-
-    _scrollController.addListener(_onScroll);
-  }
-
   @override
   void initState() {
     super.initState();
