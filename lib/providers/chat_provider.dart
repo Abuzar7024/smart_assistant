@@ -31,6 +31,7 @@ class ChatProvider with ChangeNotifier {
   }
 
   bool get hasApiKey => true;
+  bool get hasUserName => _storageService.getUserName() != 'Friend';
   String get userName => _storageService.getUserName();
   String get userAge => _storageService.getUserAge();
   String get chatTone => _storageService.getChatTone();

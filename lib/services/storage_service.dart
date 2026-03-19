@@ -7,6 +7,7 @@ class StorageService {
   static const String _settingsBoxName = 'settings';
   static const String _apiKeyKey = 'gemini_api_key';
   static const String _userNameKey = 'user_name';
+  static const String _userAgeKey = 'user_age';
   static const String _chatToneKey = 'chat_tone';
   static const String _reactionStyleKey = 'reaction_style';
 
@@ -35,8 +36,16 @@ class StorageService {
     await _settingsBox.put(_userNameKey, name);
   }
 
-  String? getUserName() {
-    return _settingsBox.get(_userNameKey) as String?;
+  String getUserName() {
+    return _settingsBox.get(_userNameKey) as String? ?? 'Friend';
+  }
+
+  Future<void> saveUserAge(String age) async {
+    await _settingsBox.put(_userAgeKey, age);
+  }
+
+  String getUserAge() {
+    return _settingsBox.get(_userAgeKey) as String? ?? '25';
   }
 
   Future<void> saveChatTone(String tone) async {
