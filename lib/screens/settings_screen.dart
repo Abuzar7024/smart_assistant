@@ -1,0 +1,184 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../providers/chat_provider.dart';
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  late TextEditingController _nameController;
+  late TextEditingController _apiKeyController;
+
+  @override
+  void initState() {
+    super.initState();
+    final chatProvider = context.read<ChatProvider>();
+    _nameController = TextEditingController(text: chatProvider.userName);
+    _apiKeyController = TextEditingController(text: context.read<ChatProvider>().hasApiKey ? '********' : '');
+  }
+
+  Future<void> _launchApiKeyUrl() async {
+    final url = Uri.parse('https://aistudio.google.com/app/apikey');
+    if (!await launchUrl(url)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch URL')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final chatProvider = context.watch<ChatProvider>();
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: theme.colorScheme.onSurface,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          _buildSectionHeader(theme, 'Personalization'),
+          const SizedBox(height: 15),
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: 'Display Name',
+              prefixIcon: const Icon(Icons.person_outline),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            onChanged: (value) => chatProvider.updateUserName(value),
+          ),
+          const SizedBox(height: 30),
+          
+          _buildSectionHeader(theme, 'Chat Persona'),
+          const SizedBox(height: 15),
+          _buildDropdownTile(
+            title: 'Tone',
+            icon: Icons.psychology_outlined,
+            value: chatProvider.chatTone,
+            items: ['Friendly', 'Professional', 'Humorous', 'Sarcastic', 'Empathetic'],
+            onChanged: (value) => chatProvider.updatePreferences(tone: value),
+          ),
+          const SizedBox(height: 10),
+          _buildDropdownTile(
+            title: 'Reaction Style',
+            icon: Icons.auto_awesome_outlined,
+            value: chatProvider.reactionStyle,
+            items: ['Expressive', 'Minimalist', 'Emoji-heavy', 'Text-only'],
+            onChanged: (value) => chatProvider.updatePreferences(style: value),
+          ),
+          const SizedBox(height: 30),
+
+          _buildSectionHeader(theme, 'Advanced'),
+          const SizedBox(height: 15),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Gemini API Key'),
+            subtitle: Text(chatProvider.hasApiKey ? 'Key is configured' : 'Not configured'),
+            trailing: TextButton(
+              onPressed: () => _showApiKeyDialog(context, chatProvider),
+              child: const Text('Update'),
+            ),
+          ),
+          const SizedBox(height: 5),
+          TextButton.icon(
+            onPressed: _launchApiKeyUrl,
+            icon: const Icon(Icons.open_in_new, size: 16),
+            label: const Text('Get a new Gemini Key'),
+            style: TextButton.styleFrom(alignment: Alignment.centerLeft, padding: EdgeInsets.zero),
+          ),
+          
+          const SizedBox(height: 40),
+          Center(
+            child: Text(
+              'Smart Assistant v1.1.0',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withAlpha(100)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(ThemeData theme, String title) {
+    return Text(
+      title.toUpperCase(),
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
+  Widget _buildDropdownTile({
+    required String title,
+    required IconData icon,
+    required String value,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withAlpha(10),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 15),
+          Expanded(child: Text(title)),
+          DropdownButton<String>(
+            value: value,
+            underline: const SizedBox(),
+            items: items.map((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(item),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showApiKeyDialog(BuildContext context, ChatProvider provider) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Update API Key'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter your AIzaSy... key',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              provider.updateApiKey(controller.text.trim());
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}

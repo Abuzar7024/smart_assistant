@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/history_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'providers/suggestions_provider.dart';
 import 'providers/chat_provider.dart';
@@ -46,14 +47,14 @@ class _SmartAssistantAppState extends State<SmartAssistantApp> {
       initialLocation: '/',
       redirect: (context, state) {
         final chatProvider = context.read<ChatProvider>();
-        final bool hasApiKey = chatProvider.hasApiKey;
+        final bool hasUserName = chatProvider.hasUserName;
         final bool isOnboarding = state.matchedLocation == '/onboarding';
 
-        if (!hasApiKey && !isOnboarding) {
+        if (!hasUserName && !isOnboarding) {
           return '/onboarding';
         }
         
-        if (hasApiKey && isOnboarding) {
+        if (hasUserName && isOnboarding) {
           return '/';
         }
 
@@ -71,6 +72,10 @@ class _SmartAssistantAppState extends State<SmartAssistantApp> {
         GoRoute(
           path: '/history',
           builder: (context, state) => const HistoryScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
           path: '/onboarding',

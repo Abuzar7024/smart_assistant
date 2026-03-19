@@ -5,6 +5,9 @@ class StorageService {
   static const String _chatBoxName = 'chat_messages';
   static const String _settingsBoxName = 'settings';
   static const String _apiKeyKey = 'gemini_api_key';
+  static const String _userNameKey = 'user_name';
+  static const String _chatToneKey = 'chat_tone';
+  static const String _reactionStyleKey = 'reaction_style';
 
   Future<void> init() async {
     await Hive.initFlutter();
@@ -27,6 +30,31 @@ class StorageService {
 
   Future<void> clearApiKey() async {
     await _settingsBox.delete(_apiKeyKey);
+  }
+
+  // User Preferences
+  Future<void> saveUserName(String name) async {
+    await _settingsBox.put(_userNameKey, name);
+  }
+
+  String? getUserName() {
+    return _settingsBox.get(_userNameKey) as String?;
+  }
+
+  Future<void> saveChatTone(String tone) async {
+    await _settingsBox.put(_chatToneKey, tone);
+  }
+
+  String getChatTone() {
+    return _settingsBox.get(_chatToneKey) as String? ?? 'Friendly';
+  }
+
+  Future<void> saveReactionStyle(String style) async {
+    await _settingsBox.put(_reactionStyleKey, style);
+  }
+
+  String getReactionStyle() {
+    return _settingsBox.get(_reactionStyleKey) as String? ?? 'Expressive';
   }
 
   // Chat History

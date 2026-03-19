@@ -17,6 +17,10 @@ class ChatProvider with ChangeNotifier {
   List<Message> get messages => _messages;
   bool get isTyping => _isTyping;
   bool get hasApiKey => _storageService.getApiKey() != null;
+  bool get hasUserName => _storageService.getUserName() != null;
+  String get userName => _storageService.getUserName() ?? 'Friend';
+  String get chatTone => _storageService.getChatTone();
+  String get reactionStyle => _storageService.getReactionStyle();
 
   void _loadHistory() {
     _messages = _storageService.getMessages();
@@ -29,19 +33,19 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateUserName(String name) async {
+    await _storageService.saveUserName(name);
+    notifyListeners();
+  }
+
+  Future<void> updatePreferences({String? tone, String? style}) async {
+    if (tone != null) await _storageService.saveChatTone(tone);
+    if (style != null) await _storageService.saveReactionStyle(style);
+    notifyListeners();
+  }
+
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
-
-    if (!hasApiKey) {
-      final systemMessage = Message(
-        sender: 'assistant',
-        text: "Please set your Gemini API Key in the settings or onboarding screen first.",
-        timestamp: DateTime.now(),
-      );
-      _messages.add(systemMessage);
-      notifyListeners();
-      return;
-    }
 
     final userMessage = Message(
       sender: 'user',
@@ -55,7 +59,8 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final replyText = await _apiService.sendChatMessage(text);
+      final systemInstruction = _buildSystemInstruction();
+      final replyText = await _apiService.sendChatMessage(text, systemInstruction: systemInstruction);
       final assistantMessage = Message(
         sender: 'assistant',
         text: replyText,
@@ -75,6 +80,13 @@ class ChatProvider with ChangeNotifier {
       _isTyping = false;
       notifyListeners();
     }
+  }
+
+  String _buildSystemInstruction() {
+    return "Your name is Smart Assistant. You are talking to $userName. "
+           "Always call them by $userName. "
+           "Your tone should be $chatTone. "
+           "Use a $reactionStyle reaction style.";
   }
 
   Future<void> clearHistory() async {

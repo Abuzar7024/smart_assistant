@@ -93,13 +93,16 @@ class ApiService {
     );
   }
 
-  // POST /chat -> Now uses Gemini!
-  Future<String> sendChatMessage(String message) async {
+  // POST /chat -> Now uses Gemini with personalization!
+  Future<String> sendChatMessage(String message, {String? systemInstruction}) async {
     if (_model == null) {
       return "Error: Gemini API Key is not set. Please configure it in settings.";
     }
     try {
-      final content = [Content.text(message)];
+      final content = [
+        if (systemInstruction != null) Content.text(systemInstruction),
+        Content.text(message),
+      ];
       final response = await _model!.generateContent(content);
       
       return response.text ?? "I'm sorry, I couldn't generate a response.";
