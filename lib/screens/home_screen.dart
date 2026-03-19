@@ -3,9 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/chat_provider.dart';
-import '../providers/suggestions_provider.dart';
 import '../providers/theme_provider.dart';
-import '../models/suggestion.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,23 +25,17 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollController.addListener(_onScroll);
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      context.read<SuggestionsProvider>().fetchSuggestions();
-    }
-  }
-
   @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final suggestionsProvider = Provider.of<SuggestionsProvider>(context);
+    final chatProvider = Provider.of<ChatProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
+    final messages = chatProvider.messages.reversed.toList();
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -82,49 +74,38 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           SafeArea(
-            child: RefreshIndicator(
-              onRefresh: () => suggestionsProvider.fetchSuggestions(isRefresh: true),
-              child: suggestionsProvider.isLoading && suggestionsProvider.suggestions.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Hello, ${context.watch<ChatProvider>().userName}!",
-                                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w300),
-                              ),
-                              Text(
-                                "How can I help you today?",
-                                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                              ),
-                            ],
-                          ).animate().fadeIn(duration: 600.ms).moveY(begin: 20, end: 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Hello, ${chatProvider.userName}!",
+                        style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w300),
+                      ),
+                      Text(
+                        "Your Recent Chats",
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                      ),
+                    ],
+                  ).animate().fadeIn(duration: 600.ms).moveY(begin: 20, end: 0),
+                ),
+                Expanded(
+                  child: messages.isEmpty
+                      ? _buildEmptyState(theme)
+                      : ListView.builder(
+                          itemCount: messages.length > 10 ? 10 : messages.length,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemBuilder: (context, index) {
+                            final message = messages[index];
+                            return _RecentChatCard(message: message, index: index);
+                          },
                         ),
-                        Expanded(
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            itemCount: suggestionsProvider.suggestions.length + (suggestionsProvider.isLoadingMore ? 1 : 0),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemBuilder: (context, index) {
-                              if (index == suggestionsProvider.suggestions.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 24),
-                                  child: Center(child: CircularProgressIndicator()),
-                                );
-                              }
-
-                              final suggestion = suggestionsProvider.suggestions[index];
-                              return _SuggestionCard(suggestion: suggestion, index: index);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                ),
+              ],
             ),
           ),
         ],
@@ -138,45 +119,64 @@ class _HomeScreenState extends State<HomeScreen> {
       ).animate().scale(delay: 400.ms),
     );
   }
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline, size: 80, color: theme.colorScheme.primary.withAlpha(50)),
+          const SizedBox(height: 20),
+          Text(
+            "No recent chats yet",
+            style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface.withAlpha(150)),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: () => context.push('/chat'),
+            child: const Text('Start an AI Conversation'),
+          ),
+        ],
+      ),
+    ).animate().fadeIn();
+  }
 }
 
-class _SuggestionCard extends StatelessWidget {
-  final Suggestion suggestion;
+class _RecentChatCard extends StatelessWidget {
+  final dynamic message;
   final int index;
 
-  const _SuggestionCard({required this.suggestion, required this.index});
+  const _RecentChatCard({required this.message, required this.index});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isUser = message.sender == 'user';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => context.push('/chat', extra: suggestion.title),
+        onTap: () => context.push('/chat'),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(10), // Updated to withAlpha
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: theme.colorScheme.surface.withAlpha(200),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: theme.colorScheme.primary.withAlpha(30)),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withAlpha(20),
+                  color: (isUser ? theme.colorScheme.primary : theme.colorScheme.secondary).withAlpha(20),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.lightbulb_outline, color: theme.colorScheme.primary),
+                child: Icon(
+                  isUser ? Icons.person_outline : Icons.auto_awesome,
+                  size: 20,
+                  color: isUser ? theme.colorScheme.primary : theme.colorScheme.secondary,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -184,22 +184,24 @@ class _SuggestionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      suggestion.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      message.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      suggestion.description,
-                      style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(150), fontSize: 14),
+                      isUser ? 'You' : 'Assistant',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withAlpha(150)),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: theme.colorScheme.primary.withAlpha(120)),
+              Icon(Icons.chevron_right, size: 16, color: theme.colorScheme.onSurface.withAlpha(80)),
             ],
           ),
         ),
       ),
-    ).animate().fadeIn(delay: (index % 10 * 50).ms).moveX(begin: 30, end: 0);
+    ).animate().fadeIn(delay: (index * 50).ms).moveX(begin: 20, end: 0);
   }
 }
