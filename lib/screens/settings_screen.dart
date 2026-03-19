@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/chat_provider.dart';
+import '../services/api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -48,24 +49,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 30),
           
-          _buildSectionHeader(theme, 'Chat Persona'),
+          _buildSectionHeader(theme, 'AI Engine (Quota Backup)'),
           const SizedBox(height: 15),
           _buildDropdownTile(
-            title: 'Tone',
-            icon: Icons.psychology_outlined,
-            value: chatProvider.chatTone,
-            items: ['Friendly', 'Professional', 'Humorous', 'Sarcastic', 'Empathetic'],
-            onChanged: (value) => chatProvider.updatePreferences(tone: value),
+            title: 'Provider',
+            icon: Icons.hub_outlined,
+            value: chatProvider.currentProvider == AiProvider.gemini ? 'Gemini (Google)' : 'Mistral (Backup)',
+            items: ['Gemini (Google)', 'Mistral (Backup)'],
+            onChanged: (value) {
+              if (value == 'Gemini (Google)') {
+                chatProvider.setProvider(AiProvider.gemini);
+              } else {
+                chatProvider.setProvider(AiProvider.mistral);
+              }
+            },
           ),
-          const SizedBox(height: 10),
-          _buildDropdownTile(
-            title: 'Reaction Style',
-            icon: Icons.auto_awesome_outlined,
-            value: chatProvider.reactionStyle,
-            items: ['Expressive', 'Minimalist', 'Emoji-heavy', 'Text-only'],
-            onChanged: (value) => chatProvider.updatePreferences(style: value),
-          ),
+          if (chatProvider.currentProvider == AiProvider.mistral)
+            Padding(
+              padding: const EdgeInsets.only(top: 10, left: 8),
+              child: Text(
+                "Tip: Mistral is a great free alternative if Gemini reaches its limit.",
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
+              ),
+            ),
           const SizedBox(height: 30),
+
+          _buildSectionHeader(theme, 'Chat Persona'),
           
           const SizedBox(height: 40),
           Center(

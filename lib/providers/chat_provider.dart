@@ -31,13 +31,24 @@ class ChatProvider with ChangeNotifier {
   }
 
   bool get hasApiKey => true;
-  bool get hasUserName => _storageService.getUserName() != null;
-  String get userName => _storageService.getUserName() ?? 'Friend';
+  String get userName => _storageService.getUserName();
+  String get userAge => _storageService.getUserAge();
   String get chatTone => _storageService.getChatTone();
   String get reactionStyle => _storageService.getReactionStyle();
+  AiProvider get currentProvider => _apiService.currentProvider;
 
   void _loadHistory() {
     _conversations = _storageService.getConversations();
+    notifyListeners();
+  }
+
+  void updateUserName(String name) {
+    _storageService.saveUserName(name);
+    notifyListeners();
+  }
+
+  void setProvider(AiProvider provider) {
+    _apiService.setProvider(provider);
     notifyListeners();
   }
 
