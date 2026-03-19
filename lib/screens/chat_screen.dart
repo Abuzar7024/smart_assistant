@@ -1,5 +1,14 @@
 import 'package:go_router/go_router.dart';
 import '../models/conversation.dart';
+import '../providers/chat_provider.dart';
+import '../models/message.dart';
+import '../widgets/app_drawer.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../widgets/chat_input.dart';
+import '../widgets/typing_indicator.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? conversationId;
@@ -50,6 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: Column(
           children: [

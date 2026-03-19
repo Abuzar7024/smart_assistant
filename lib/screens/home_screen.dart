@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/chat_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/app_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: Text(
           'Smart Assistant',
@@ -37,10 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: Icon(themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: () => themeProvider.toggleTheme(!themeProvider.isDarkMode),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push('/settings'),
           ),
         ],
       ),
